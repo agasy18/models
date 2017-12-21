@@ -34,10 +34,11 @@ def create_tf_example(file_url, frame_time, objects, file_content, img):
     xmins.append(x0/width)
     ymins.append(y0/height)
     xmaxs.append(x1/width)
-    xmaxs.append(y1/height)
+    ymaxs.append(y1/height)
 
     classes_text.append(obj_name)
     classes.append(obj_id)
+
 
   tf_example = tf.train.Example(features=tf.train.Features(feature={
     'image/height': dataset_util.int64_feature(height),
@@ -53,6 +54,7 @@ def create_tf_example(file_url, frame_time, objects, file_content, img):
     'image/object/class/text': dataset_util.bytes_list_feature(classes_text),
     'image/object/class/label': dataset_util.int64_list_feature(classes),
   }))
+
   return tf_example
 
 
