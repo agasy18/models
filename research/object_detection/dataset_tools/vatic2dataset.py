@@ -31,13 +31,14 @@ def create_tf_example(file_url, frame_time, objects, file_content, img):
   classes = []  # List of integer class id of bounding box (1 per box)
 
   for obj_name, obj_id, ((x0, y0), (x1, y1)) in objects:
-    xmins.append(x0/width)
-    ymins.append(y0/height)
-    xmaxs.append(x1/width)
-    ymaxs.append(y1/height)
+    xmins.append(float(x0)/width)
+    ymins.append(float(y0)/height)
+    xmaxs.append(float(x1)/width)
+    ymaxs.append(float(y1)/height)
 
     classes_text.append(obj_name)
     classes.append(obj_id)
+
 
 
   tf_example = tf.train.Example(features=tf.train.Features(feature={
@@ -95,6 +96,8 @@ def main(_):
   with tf.Session() as sess, tf.python_io.TFRecordWriter(records_file_name) as writer:
     print('Writing: ' + records_file_name)
     for frame_time, objects in frames:
+      #if not len(objects):
+      #  continue
       file_name = '{}.jpg'.format(frame_time)
       tf_example = create_tf_example(file_name,
                                      frame_time,
