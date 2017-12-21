@@ -31,10 +31,10 @@ def create_tf_example(file_url, frame_time, objects, file_content, img):
   classes = []  # List of integer class id of bounding box (1 per box)
 
   for obj_name, obj_id, ((x0, y0), (x1, y1)) in objects:
-    xmins.append(x0)
-    ymins.append(y0)
-    xmaxs.append(x1)
-    xmaxs.append(y1)
+    xmins.append(x0/width)
+    ymins.append(y0/height)
+    xmaxs.append(x1/width)
+    xmaxs.append(y1/height)
 
     classes_text.append(obj_name)
     classes.append(obj_id)
