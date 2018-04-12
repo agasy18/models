@@ -96,8 +96,8 @@ def main(_):
   with tf.Session() as sess, tf.python_io.TFRecordWriter(records_file_name) as writer:
     print('Writing: ' + records_file_name)
     for frame_time, objects in frames:
-      #if not len(objects):
-      #  continue
+      if not len(objects):
+       continue
       file_name = '{}.jpg'.format(frame_time)
       tf_example = create_tf_example(file_name,
                                      frame_time,
