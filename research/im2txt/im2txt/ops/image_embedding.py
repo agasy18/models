@@ -112,3 +112,37 @@ def inception_v3(images,
       tf.contrib.layers.summaries.summarize_activation(v)
 
   return net
+
+
+def ssd(images,
+        trainable=True,
+        is_training=True,
+        weight_decay=0.00004,
+        stddev=0.1,
+        dropout_keep_prob=0.8,
+        use_batch_norm=True,
+        batch_norm_params=None,
+        add_summaries=True,
+        scope="SSD"):
+  def flat_tensor(t):
+    return tf.reshape(t, [tf.shape(t)[0], -1])
+
+  from subprocess import call
+  from os.path import join
+  url = 'http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_coco_2017_11_17.tar.gz'
+  call(['wget', '-nc', url])
+  tar = 'ssd_mobilenet_v1_coco_2017_11_17.tar.gz'
+  call(['tar', '-xvf', tar, '-C', './'])
+  model_file = 'ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
+  feature_layers = ['FeatureExtractor/MobilenetV1/MobilenetV1/Conv2d_11_pointwise/Relu6:0']
+  feature_selector = lambda: tf.concat(
+    [flat_tensor(tf.get_default_graph().get_tensor_by_name(n + ':0')) for n in
+     feature_layers], axis=1, name='selected_features')
+  images = tf.cast((images + 1.0) * (0.5 * 255), dtype=tf.uint8, name='detector_image')
+
+  with tf.gfile.GFile(model_file, 'rb') as fid:
+    serialized_graph = fid.read()
+    od_graph_def = tf.get_default_graph()
+    od_graph_def.ParseFromString(serialized_graph)
+    tf.import_graph_def(od_graph_def, name='', input_map={'image_tensor:0': images})
+  return tf.reshape(feature_selector(), [tf.shape(images)[0], -1])
