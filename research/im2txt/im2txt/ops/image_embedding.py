@@ -134,9 +134,7 @@ def ssd(images,
   call(['tar', '-xf', tar, '-C', './'])
   model_file = 'ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
   feature_layers = ['FeatureExtractor/MobilenetV1/MobilenetV1/Conv2d_11_pointwise/Relu6:0']
-  feature_selector = lambda: tf.concat(
-    [flat_tensor(n) for n in
-     feature_layers], axis=1, name='selected_features')
+  feature_selector = lambda f: tf.concat([flat_tensor(n) for n in f], axis=1, name='selected_features')
   images = tf.cast((images + 1.0) * (0.5 * 255), dtype=tf.uint8, name='detector_image')
 
   with tf.gfile.GFile(model_file, 'rb') as fid:
