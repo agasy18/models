@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-
 import tensorflow as tf
 
 from tensorflow.contrib.slim.python.slim.nets.inception_v3 import inception_v3_base
@@ -62,19 +61,19 @@ def inception_v3(images,
     # Default parameters for batch normalization.
     if not batch_norm_params:
       batch_norm_params = {
-          "is_training": is_inception_model_training,
-          "trainable": trainable,
-          # Decay for the moving averages.
-          "decay": 0.9997,
-          # Epsilon to prevent 0s in variance.
-          "epsilon": 0.001,
-          # Collection containing the moving mean and moving variance.
-          "variables_collections": {
-              "beta": None,
-              "gamma": None,
-              "moving_mean": ["moving_vars"],
-              "moving_variance": ["moving_vars"],
-          }
+        "is_training": is_inception_model_training,
+        "trainable": trainable,
+        # Decay for the moving averages.
+        "decay": 0.9997,
+        # Epsilon to prevent 0s in variance.
+        "epsilon": 0.001,
+        # Collection containing the moving mean and moving variance.
+        "variables_collections": {
+          "beta": None,
+          "gamma": None,
+          "moving_mean": ["moving_vars"],
+          "moving_variance": ["moving_vars"],
+        }
       }
   else:
     batch_norm_params = None
@@ -100,10 +99,10 @@ def inception_v3(images,
           shape = net.get_shape()
           net = slim.avg_pool2d(net, shape[1:3], padding="VALID", scope="pool")
           net = slim.dropout(
-              net,
-              keep_prob=dropout_keep_prob,
-              is_training=is_inception_model_training,
-              scope="dropout")
+            net,
+            keep_prob=dropout_keep_prob,
+            is_training=is_inception_model_training,
+            scope="dropout")
           net = slim.flatten(net, scope="flatten")
 
   # Add summaries.
@@ -142,7 +141,7 @@ def ssd(images,
 
   with tf.gfile.GFile(model_file, 'rb') as fid:
     serialized_graph = fid.read()
-    od_graph_def = tf.get_default_graph()
+    od_graph_def = tf.GraphDef()
     od_graph_def.ParseFromString(serialized_graph)
     tf.import_graph_def(od_graph_def, name='', input_map={'image_tensor:0': images})
   return tf.reshape(feature_selector(), [tf.shape(images)[0], -1])
