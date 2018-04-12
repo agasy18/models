@@ -329,14 +329,14 @@ class ShowAndTellModel(object):
     """Sets up the function to restore inception variables from checkpoint."""
     if self.mode != "inference":
       # Restore inception variables only.
-      saver = tf.train.Saver(self.inception_variables)
+      # saver = tf.train.Saver(self.inception_variables)
+      #
+      # def restore_fn(sess):
+      #   tf.logging.info("Restoring Inception variables from checkpoint file %s",
+      #                   self.config.inception_checkpoint_file)
+      #   saver.restore(sess, self.config.inception_checkpoint_file)
 
-      def restore_fn(sess):
-        tf.logging.info("Restoring Inception variables from checkpoint file %s",
-                        self.config.inception_checkpoint_file)
-        saver.restore(sess, self.config.inception_checkpoint_file)
-
-      self.init_fn = restore_fn
+      self.init_fn = lambda: 0
 
   def setup_global_step(self):
     """Sets up the global step Tensor."""
