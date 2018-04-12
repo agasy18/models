@@ -142,4 +142,4 @@ def ssd(images,
     od_graph_def = tf.GraphDef()
     od_graph_def.ParseFromString(serialized_graph)
     res = tf.import_graph_def(od_graph_def, name='', input_map={'image_tensor:0': images}, return_elements=feature_layers)
-  return tf.reshape(feature_selector(res), [tf.shape(images)[0], 2432])
+  return tf.reshape(feature_selector(res), [32, 2432])
