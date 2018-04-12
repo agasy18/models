@@ -135,7 +135,7 @@ def ssd(images,
   model_file = 'ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
   feature_layers = ['FeatureExtractor/MobilenetV1/MobilenetV1/Conv2d_11_pointwise/Relu6:0']
   feature_selector = lambda: tf.concat(
-    [flat_tensor(tf.get_default_graph().get_tensor_by_name(n + ':0')) for n in
+    [flat_tensor(n) for n in
      feature_layers], axis=1, name='selected_features')
   images = tf.cast((images + 1.0) * (0.5 * 255), dtype=tf.uint8, name='detector_image')
 
@@ -143,5 +143,5 @@ def ssd(images,
     serialized_graph = fid.read()
     od_graph_def = tf.GraphDef()
     od_graph_def.ParseFromString(serialized_graph)
-    print(tf.import_graph_def(od_graph_def, name='', input_map={'image_tensor:0': images}, return_elements=feature_layers))
-  return tf.reshape(feature_selector(), [tf.shape(images)[0], -1])
+    res = tf.import_graph_def(od_graph_def, name='', input_map={'image_tensor:0': images}, return_elements=feature_layers)
+  return tf.reshape(feature_selector(res), [tf.shape(images)[0], -1])
