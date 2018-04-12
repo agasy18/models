@@ -336,7 +336,7 @@ class ShowAndTellModel(object):
       #                   self.config.inception_checkpoint_file)
       #   saver.restore(sess, self.config.inception_checkpoint_file)
 
-      self.init_fn = lambda: 0
+      self.init_fn = lambda sess: 0
 
   def setup_global_step(self):
     """Sets up the global step Tensor."""
