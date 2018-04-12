@@ -118,8 +118,9 @@ def run_once(model, saver, summary_writer, summary_op):
     tf.logging.info("Skipping evaluation. No checkpoint found in: %s",
                     FLAGS.checkpoint_dir)
     return
-
-  with tf.Session() as sess:
+  session_config = tf.ConfigProto()
+  session_config.gpu_options.allow_growth = True
+  with tf.Session(config=session_config) as sess:
     # Load model from checkpoint.
     tf.logging.info("Loading model from checkpoint: %s", model_path)
     saver.restore(sess, model_path)
