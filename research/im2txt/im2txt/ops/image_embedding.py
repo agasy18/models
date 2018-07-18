@@ -149,8 +149,10 @@ def ssd(images,
     batch_size = 32
 
     FLAGS = tf.flags.FLAGS
-
-    if FLAGS.input_files:
+    try:
+        if FLAGS.input_files:
+            batch_size = 1
+    except:
         batch_size = 1
 
     selected_features = tf.reshape(res[0], [batch_size, 19, 19, 512])
