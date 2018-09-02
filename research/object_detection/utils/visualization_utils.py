@@ -171,8 +171,9 @@ def draw_bounding_box_on_image(image,
   draw.line([(left, top), (left, bottom), (right, bottom),
              (right, top), (left, top)], width=thickness, fill=color)
   try:
-    font = ImageFont.truetype('arial.ttf', 24)
+    font = ImageFont.truetype('arial.ttf', thickness * 5)
   except IOError:
+    print("loading default font")
     font = ImageFont.load_default()
 
   # If the total height of the display strings added to the top of the bounding

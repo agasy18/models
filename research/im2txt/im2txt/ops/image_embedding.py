@@ -20,7 +20,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-
+import os
 from tensorflow.contrib.slim.python.slim.nets.inception_v3 import inception_v3_base
 
 slim = tf.contrib.slim
@@ -126,14 +126,15 @@ def ssd(images,
     def flat_tensor(t):
         return tf.reshape(t, [tf.shape(t)[0], -1])
 
-    from subprocess import call
     from os.path import join
-    url = 'http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_coco_2017_11_17.tar.gz'
-    call(['wget', '-nc', url])
-    tar = 'ssd_mobilenet_v1_coco_2017_11_17.tar.gz'
-    call(['tar', '-xf', tar, '-C', './'])
     model_file = 'ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
     feature_layers = ['FeatureExtractor/MobilenetV1/MobilenetV1/Conv2d_10_pointwise/Relu6:0']
+    if not os.path.isfile(model_file):
+        from subprocess import call
+        url = 'http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_coco_2017_11_17.tar.gz'
+        call(['wget', '-nc', url])
+        tar = 'ssd_mobilenet_v1_coco_2017_11_17.tar.gz'
+        call(['tar', '-xf', tar, '-C', './'])
     feature_selector = lambda f: tf.concat([flat_tensor(n) for n in f], axis=1, name='selected_features')
     images = tf.cast((images + 1.0) * (0.5 * 255), dtype=tf.uint8, name='detector_image')
 
