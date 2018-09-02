@@ -133,7 +133,7 @@ def ssd(images,
     tar = 'ssd_mobilenet_v1_coco_2017_11_17.tar.gz'
     call(['tar', '-xf', tar, '-C', './'])
     model_file = 'ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
-    feature_layers = ['FeatureExtractor/MobilenetV1/MobilenetV1/Conv2d_11_pointwise/Relu6:0']
+    feature_layers = ['FeatureExtractor/MobilenetV1/MobilenetV1/Conv2d_10_pointwise/Relu6:0']
     feature_selector = lambda f: tf.concat([flat_tensor(n) for n in f], axis=1, name='selected_features')
     images = tf.cast((images + 1.0) * (0.5 * 255), dtype=tf.uint8, name='detector_image')
 
@@ -150,7 +150,7 @@ def ssd(images,
 
     FLAGS = tf.flags.FLAGS
 
-    if FLAGS.input_files:
+    if hasattr(FLAGS, 'input_files'):
         batch_size = 1
 
     selected_features = tf.reshape(res[0], [batch_size, 19, 19, 512])
@@ -182,10 +182,14 @@ def ssd(images,
         return bn
 
     width_multiplier = 1
+    net = _depthwise_separable_conv(selected_features, 512, width_multiplier, sc='x_conv_ds_11')
     net = _depthwise_separable_conv(selected_features, 512, width_multiplier, sc='x_conv_ds_12')
-
     net = _depthwise_separable_conv(net, 1024, width_multiplier, downsample=True, sc='x_conv_ds_13')
     net = _depthwise_separable_conv(net, 1024, width_multiplier, sc='x_conv_ds_14')
-    net = slim.avg_pool2d(net, [7, 7], scope='x_avg_pool_15')
-
+    net = _depthwise_separable_conv(net, 2048, width_multiplier, downsample=True, sc='x_conv_ds_15')
+    net = _depthwise_separable_conv(net, 1024, width_multiplier, sc='x_conv_ds_16')
+    net = _depthwise_separable_conv(net, 1024, width_multiplier, sc='x_conv_ds_17')
+    net = _depthwise_separable_conv(net, 1024, width_multiplier, downsample=True, sc='x_conv_ds_18')
+    net = _depthwise_separable_conv(net, 1024, width_multiplier, downsample=True, sc='x_conv_ds_19')
+    
     return tf.reshape(net, [batch_size, 4096], name='emb_f')

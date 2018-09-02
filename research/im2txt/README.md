@@ -335,3 +335,10 @@ expected.
 Here is the image:
 
 ![Surfer](g3doc/COCO_val2014_000000224477.jpg)
+
+gpu0 args
+```bash
+bazel-bin/im2txt/train --input_file_pattern="/hdd/train/im2txt-mid/train-?????-of-00256" --inception_checkpoint_file="faf" --train_dir=/hdd/train/im2txt-mid-train/4 --train_inception=false  --number_of_steps=1000000
+N=4;CUDA_VISIBLE_DEVICES=  bazel-bin/im2txt/evaluate --input_file_pattern="/hdd/train/im2txt-mid/val-?????-of-00004" --checkpoint_dir=/hdd/train/im2txt-mid-train/$N --eval_dir=/hdd/train/im2txt-mid-train/$N/eval
+CUDA_VISIBLE_DEVICES= tensorboard --logdir /hdd/train/im2txt-mid-train
+```
