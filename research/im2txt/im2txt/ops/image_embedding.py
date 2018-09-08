@@ -160,16 +160,15 @@ def ssd(images,
                                   num_pwc_filters,
                                   width_multiplier,
                                   sc,
-                                  downsample=False):
+                                  stride=1):
         """ Helper function to build the depth-wise separable convolution layer.
       """
         num_pwc_filters = round(num_pwc_filters * width_multiplier)
-        _stride = 2 if downsample else 1
 
         # skip pointwise by setting num_outputs=None
         depthwise_conv = slim.separable_convolution2d(inputs,
                                                       num_outputs=None,
-                                                      stride=_stride,
+                                                      stride=stride,
                                                       depth_multiplier=1,
                                                       kernel_size=[3, 3],
                                                       scope=sc + '/depthwise_conv')
@@ -183,14 +182,8 @@ def ssd(images,
         return bn
 
     width_multiplier = 1
-    net = _depthwise_separable_conv(selected_features, 512, width_multiplier, sc='x_conv_ds_11')
-    net = _depthwise_separable_conv(selected_features, 512, width_multiplier, sc='x_conv_ds_12')
-    net = _depthwise_separable_conv(net, 1024, width_multiplier, downsample=True, sc='x_conv_ds_13')
-    net = _depthwise_separable_conv(net, 1024, width_multiplier, sc='x_conv_ds_14')
-    net = _depthwise_separable_conv(net, 2048, width_multiplier, downsample=True, sc='x_conv_ds_15')
-    net = _depthwise_separable_conv(net, 1024, width_multiplier, sc='x_conv_ds_16')
-    net = _depthwise_separable_conv(net, 1024, width_multiplier, sc='x_conv_ds_17')
-    net = _depthwise_separable_conv(net, 1024, width_multiplier, downsample=True, sc='x_conv_ds_18')
-    net = _depthwise_separable_conv(net, 1024, width_multiplier, downsample=True, sc='x_conv_ds_19')
+    net = _depthwise_separable_conv(selected_features, 1024, width_multiplier, stride=2, sc='x_conv_ds_11')
+    net = _depthwise_separable_conv(net, 1024, width_multiplier, stride=3, sc='x_conv_ds_12')
+    net = _depthwise_separable_conv(net, 512, width_multiplier, stride=2, sc='x_conv_ds_13')
     
-    return tf.reshape(net, [batch_size, 4096], name='emb_f')
+    return tf.reshape(net, [batch_size, 2048], name='emb_f')
