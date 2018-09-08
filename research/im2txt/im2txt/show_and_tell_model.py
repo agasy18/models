@@ -334,6 +334,7 @@ class ShowAndTellModel(object):
                         self.config.inception_checkpoint_file)
         saver.restore(sess, self.config.inception_checkpoint_file)
 
+      tf.logging.info("Assigning restore_fn function")
       self.init_fn = restore_fn
 
   def setup_global_step(self):
@@ -349,10 +350,13 @@ class ShowAndTellModel(object):
   def build(self):
     """Creates all ops for training and evaluation."""
     self.st_variables = []
+
     def st_custom_getter(getter, name, shape, *args, **kwargs):
       v = getter(name, shape, *args, **kwargs)
       self.st_variables.append(v)
       return v
+
+    self.st_custom_getter = st_custom_getter
 
     self.build_inputs()
     self.build_image_embeddings()

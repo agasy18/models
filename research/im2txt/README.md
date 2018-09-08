@@ -338,7 +338,9 @@ Here is the image:
 
 gpu0 args
 ```bash
-bazel-bin/im2txt/train --input_file_pattern="/hdd/train/im2txt-mid/train-?????-of-00256" --inception_checkpoint_file="faf" --train_dir=/hdd/train/im2txt-mid-train/4 --train_inception=false  --number_of_steps=1000000
-N=4;CUDA_VISIBLE_DEVICES=  bazel-bin/im2txt/evaluate --input_file_pattern="/hdd/train/im2txt-mid/val-?????-of-00004" --checkpoint_dir=/hdd/train/im2txt-mid-train/$N --eval_dir=/hdd/train/im2txt-mid-train/$N/eval
-CUDA_VISIBLE_DEVICES= tensorboard --logdir /hdd/train/im2txt-mid-train
+bazel-bin/im2txt/train --input_file_pattern "/home/aghasy/im2txt_data/train-?????-of-00256" --inception_checkpoint_file "/hdd/models/im2txt/model.ckpt-1000000" --train_dir /hdd/train/im2txt+ssd/ssd-ext --train_inception=false  --number_of_steps=1000000 
+
+N="ssd-ext"; bazel-bin/im2txt/evaluate --input_file_pattern "/home/aghasy/im2txt_data/val-?????-of-00004" --checkpoint_dir=/hdd/train/im2txt+ssd/$N --eval_dir=/hdd/train/im2txt+ssd/$N/eval
+
+CUDA_VISIBLE_DEVICES= tensorboard --logdir /hdd/train/im2txt+ssd
 ```
