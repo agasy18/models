@@ -23,7 +23,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-
 import tensorflow as tf
 
 from im2txt.ops import image_embedding
@@ -57,8 +56,8 @@ class ShowAndTellModel(object):
     # To match the "Show and Tell" paper we initialize all variables with a
     # random uniform initializer.
     self.initializer = tf.random_uniform_initializer(
-        minval=-self.config.initializer_scale,
-        maxval=self.config.initializer_scale)
+      minval=-self.config.initializer_scale,
+      maxval=self.config.initializer_scale)
 
     # A float32 Tensor with shape [batch_size, height, width, channels].
     self.images = None
@@ -144,13 +143,13 @@ class ShowAndTellModel(object):
     else:
       # Prefetch serialized SequenceExample protos.
       input_queue = input_ops.prefetch_input_data(
-          self.reader,
-          self.config.input_file_pattern,
-          is_training=self.is_training(),
-          batch_size=self.config.batch_size,
-          values_per_shard=self.config.values_per_input_shard,
-          input_queue_capacity_factor=self.config.input_queue_capacity_factor,
-          num_reader_threads=self.config.num_input_reader_threads)
+        self.reader,
+        self.config.input_file_pattern,
+        is_training=self.is_training(),
+        batch_size=self.config.batch_size,
+        values_per_shard=self.config.values_per_input_shard,
+        input_queue_capacity_factor=self.config.input_queue_capacity_factor,
+        num_reader_threads=self.config.num_input_reader_threads)
 
       # Image processing and random distortion. Split across multiple threads
       # with each thread applying a slightly different distortion.
@@ -159,9 +158,9 @@ class ShowAndTellModel(object):
       for thread_id in range(self.config.num_preprocess_threads):
         serialized_sequence_example = input_queue.dequeue()
         encoded_image, caption = input_ops.parse_sequence_example(
-            serialized_sequence_example,
-            image_feature=self.config.image_feature_name,
-            caption_feature=self.config.caption_feature_name)
+          serialized_sequence_example,
+          image_feature=self.config.image_feature_name,
+          caption_feature=self.config.caption_feature_name)
         image = self.process_image(encoded_image, thread_id=thread_id)
         images_and_captions.append([image, caption])
 
@@ -169,9 +168,9 @@ class ShowAndTellModel(object):
       queue_capacity = (2 * self.config.num_preprocess_threads *
                         self.config.batch_size)
       images, input_seqs, target_seqs, input_mask = (
-          input_ops.batch_with_dynamic_pad(images_and_captions,
-                                           batch_size=self.config.batch_size,
-                                           queue_capacity=queue_capacity))
+        input_ops.batch_with_dynamic_pad(images_and_captions,
+                                         batch_size=self.config.batch_size,
+                                         queue_capacity=queue_capacity))
 
     self.images = images
     self.input_seqs = input_seqs
@@ -188,21 +187,21 @@ class ShowAndTellModel(object):
       self.image_embeddings
     """
     inception_output = image_embedding.ssd(
-        self.images,
-        trainable=self.train_inception,
-        is_training=self.is_training())
+      self.images,
+      trainable=self.train_inception,
+      is_training=self.is_training())
     self.inception_variables = tf.get_collection(
-        tf.GraphKeys.GLOBAL_VARIABLES, scope="ssd")
+      tf.GraphKeys.GLOBAL_VARIABLES, scope="ssd")
 
     # Map inception output into embedding space.
     with tf.variable_scope("image_embedding") as scope:
       image_embeddings = tf.contrib.layers.fully_connected(
-          inputs=inception_output,
-          num_outputs=self.config.embedding_size,
-          activation_fn=None,
-          weights_initializer=self.initializer,
-          biases_initializer=None,
-          scope=scope)
+        inputs=inception_output,
+        num_outputs=self.config.embedding_size,
+        activation_fn=None,
+        weights_initializer=self.initializer,
+        biases_initializer=None,
+        scope=scope)
 
     # Save the embedding size in the graph.
     tf.constant(self.config.embedding_size, name="embedding_size")
@@ -218,11 +217,11 @@ class ShowAndTellModel(object):
     Outputs:
       self.seq_embeddings
     """
-    with tf.variable_scope("seq_embedding"), tf.device("/cpu:0"):
+    with tf.variable_scope("seq_embedding", custom_getter=self.st_custom_getter), tf.device("/cpu:0"):
       embedding_map = tf.get_variable(
-          name="map",
-          shape=[self.config.vocab_size, self.config.embedding_size],
-          initializer=self.initializer)
+        name="map",
+        shape=[self.config.vocab_size, self.config.embedding_size],
+        initializer=self.initializer)
       seq_embeddings = tf.nn.embedding_lookup(embedding_map, self.input_seqs)
 
     self.seq_embeddings = seq_embeddings
@@ -245,17 +244,17 @@ class ShowAndTellModel(object):
     # modified LSTM in the "Show and Tell" paper has no biases and outputs
     # new_c * sigmoid(o).
     lstm_cell = tf.contrib.rnn.BasicLSTMCell(
-        num_units=self.config.num_lstm_units, state_is_tuple=True)
+      num_units=self.config.num_lstm_units, state_is_tuple=True)
     if self.mode == "train":
       lstm_cell = tf.contrib.rnn.DropoutWrapper(
-          lstm_cell,
-          input_keep_prob=self.config.lstm_dropout_keep_prob,
-          output_keep_prob=self.config.lstm_dropout_keep_prob)
+        lstm_cell,
+        input_keep_prob=self.config.lstm_dropout_keep_prob,
+        output_keep_prob=self.config.lstm_dropout_keep_prob)
 
-    with tf.variable_scope("lstm", initializer=self.initializer) as lstm_scope:
+    with tf.variable_scope("lstm", initializer=self.initializer, custom_getter=self.st_custom_getter) as lstm_scope:
       # Feed the image embeddings to set the initial LSTM state.
       zero_state = lstm_cell.zero_state(
-          batch_size=self.image_embeddings.get_shape()[0], dtype=tf.float32)
+        batch_size=self.image_embeddings.get_shape()[0], dtype=tf.float32)
       _, initial_state = lstm_cell(self.image_embeddings, zero_state)
 
       # Allow the LSTM variables to be reused.
@@ -274,8 +273,8 @@ class ShowAndTellModel(object):
 
         # Run a single LSTM step.
         lstm_outputs, state_tuple = lstm_cell(
-            inputs=tf.squeeze(self.seq_embeddings, axis=[1]),
-            state=state_tuple)
+          inputs=tf.squeeze(self.seq_embeddings, axis=[1]),
+          state=state_tuple)
 
         # Concatentate the resulting state.
         tf.concat(axis=1, values=state_tuple, name="state")
@@ -292,13 +291,13 @@ class ShowAndTellModel(object):
     # Stack batches vertically.
     lstm_outputs = tf.reshape(lstm_outputs, [-1, lstm_cell.output_size])
 
-    with tf.variable_scope("logits") as logits_scope:
+    with tf.variable_scope("logits", custom_getter=self.st_custom_getter) as logits_scope:
       logits = tf.contrib.layers.fully_connected(
-          inputs=lstm_outputs,
-          num_outputs=self.config.vocab_size,
-          activation_fn=None,
-          weights_initializer=self.initializer,
-          scope=logits_scope)
+        inputs=lstm_outputs,
+        num_outputs=self.config.vocab_size,
+        activation_fn=None,
+        weights_initializer=self.initializer,
+        scope=logits_scope)
 
     if self.mode == "inference":
       tf.nn.softmax(logits, name="softmax")
@@ -328,28 +327,33 @@ class ShowAndTellModel(object):
   def setup_inception_initializer(self):
     """Sets up the function to restore inception variables from checkpoint."""
     if self.mode != "inference":
-      # Restore inception variables only.
-      # saver = tf.train.Saver(self.inception_variables)
-      #
-      # def restore_fn(sess):
-      #   tf.logging.info("Restoring Inception variables from checkpoint file %s",
-      #                   self.config.inception_checkpoint_file)
-      #   saver.restore(sess, self.config.inception_checkpoint_file)
+      saver = tf.train.Saver(self.st_variables)
 
-      self.init_fn = lambda sess: 0
+      def restore_fn(sess):
+        tf.logging.info("Restoring {} variables from checkpoint file %s".format(self.st_variables),
+                        self.config.inception_checkpoint_file)
+        saver.restore(sess, self.config.inception_checkpoint_file)
+
+      self.init_fn = restore_fn
 
   def setup_global_step(self):
     """Sets up the global step Tensor."""
     global_step = tf.Variable(
-        initial_value=0,
-        name="global_step",
-        trainable=False,
-        collections=[tf.GraphKeys.GLOBAL_STEP, tf.GraphKeys.GLOBAL_VARIABLES])
+      initial_value=0,
+      name="global_step",
+      trainable=False,
+      collections=[tf.GraphKeys.GLOBAL_STEP, tf.GraphKeys.GLOBAL_VARIABLES])
 
     self.global_step = global_step
 
   def build(self):
     """Creates all ops for training and evaluation."""
+    self.st_variables = []
+    def st_custom_getter(getter, name, shape, *args, **kwargs):
+      v = getter(name, shape, *args, **kwargs)
+      self.st_variables.append(v)
+      return v
+
     self.build_inputs()
     self.build_image_embeddings()
     self.build_seq_embeddings()
