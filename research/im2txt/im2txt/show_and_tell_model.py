@@ -327,14 +327,15 @@ class ShowAndTellModel(object):
   def setup_inception_initializer(self):
     """Sets up the function to restore inception variables from checkpoint."""
     if self.mode != "inference":
-      saver = tf.train.Saver(self.st_variables)
+      # saver = tf.train.Saver(self.st_variables)
 
       def restore_fn(sess):
-        tf.logging.info("Restoring {} variables from checkpoint file %s".format(self.st_variables),
-                        self.config.inception_checkpoint_file)
-        saver.restore(sess, self.config.inception_checkpoint_file)
-
-      tf.logging.info("Assigning restore_fn function")
+        return
+      #   tf.logging.info("Restoring {} variables from checkpoint file %s".format(self.st_variables),
+      #                   self.config.inception_checkpoint_file)
+      #   saver.restore(sess, self.config.inception_checkpoint_file)
+      #
+      # tf.logging.info("Assigning restore_fn function")
       self.init_fn = restore_fn
 
   def setup_global_step(self):
@@ -349,14 +350,26 @@ class ShowAndTellModel(object):
 
   def build(self):
     """Creates all ops for training and evaluation."""
-    self.st_variables = []
+    if self.config.inception_checkpoint_file:
+      self.st_variables = []
+      reader = tf.train.NewCheckpointReader(self.config.inception_checkpoint_file)
 
-    def st_custom_getter(getter, name, shape, *args, **kwargs):
-      v = getter(name, shape, *args, **kwargs)
-      self.st_variables.append(v)
-      return v
+      name_map = {
+        'lstm/basic_lstm_cell/kernel': 'lstm/BasicLSTMCell/Linear/Matrix',
+        'lstm/basic_lstm_cell/bias': 'lstm/BasicLSTMCell/Linear/Bias'
+      }
 
-    self.st_custom_getter = st_custom_getter
+      def st_custom_getter(getter, name, shape, *args, **kwargs):
+        kwargs['trainable'] = False
+        print('Restoring', name, shape)
+        kwargs['initializer'] = tf.initializers.constant(reader.get_tensor(name_map.get(name) or name))
+        v = getter(name, shape, *args, **kwargs)
+        self.st_variables.append(v)
+        return v
+
+      self.st_custom_getter = st_custom_getter
+    else:
+      self.st_custom_getter = None
 
     self.build_inputs()
     self.build_image_embeddings()
