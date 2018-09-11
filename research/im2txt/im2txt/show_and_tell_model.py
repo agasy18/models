@@ -48,6 +48,7 @@ class ShowAndTellModel(object):
     """
     assert mode in ["train", "eval", "inference"]
     self.config = config
+    self.st_custom_getter = None
     self.mode = mode
     self.train_inception = train_inception
 
@@ -190,12 +191,12 @@ class ShowAndTellModel(object):
     inception_output = image_embedding.inception_v3(
         self.images,
         trainable=self.train_inception,
-        is_training=self.is_training())
+        is_training=self.is_training(), scope=tf.VariableScope('InceptionV3', custom_getter=self.st_custom_getter))
     self.inception_variables = tf.get_collection(
         tf.GraphKeys.GLOBAL_VARIABLES, scope="InceptionV3")
 
     # Map inception output into embedding space.
-    with tf.variable_scope("image_embedding") as scope:
+    with tf.variable_scope("image_embedding", custom_getter=self.st_custom_getter) as scope:
       image_embeddings = tf.contrib.layers.fully_connected(
           inputs=inception_output,
           num_outputs=self.config.embedding_size,
@@ -218,7 +219,7 @@ class ShowAndTellModel(object):
     Outputs:
       self.seq_embeddings
     """
-    with tf.variable_scope("seq_embedding"), tf.device("/cpu:0"):
+    with tf.variable_scope("seq_embedding", custom_getter=self.st_custom_getter), tf.device("/cpu:0"):
       embedding_map = tf.get_variable(
           name="map",
           shape=[self.config.vocab_size, self.config.embedding_size],
@@ -252,7 +253,7 @@ class ShowAndTellModel(object):
           input_keep_prob=self.config.lstm_dropout_keep_prob,
           output_keep_prob=self.config.lstm_dropout_keep_prob)
 
-    with tf.variable_scope("lstm", initializer=self.initializer) as lstm_scope:
+    with tf.variable_scope("lstm", initializer=self.initializer, custom_getter=self.st_custom_getter) as lstm_scope:
       # Feed the image embeddings to set the initial LSTM state.
       zero_state = lstm_cell.zero_state(
           batch_size=self.image_embeddings.get_shape()[0], dtype=tf.float32)
@@ -292,7 +293,7 @@ class ShowAndTellModel(object):
     # Stack batches vertically.
     lstm_outputs = tf.reshape(lstm_outputs, [-1, lstm_cell.output_size])
 
-    with tf.variable_scope("logits") as logits_scope:
+    with tf.variable_scope("logits", custom_getter=self.st_custom_getter) as logits_scope:
       logits = tf.contrib.layers.fully_connected(
           inputs=lstm_outputs,
           num_outputs=self.config.vocab_size,
@@ -350,6 +351,7 @@ class ShowAndTellModel(object):
 
   def build(self):
     """Creates all ops for training and evaluation."""
+    assert(self.st_custom_getter)
     self.build_inputs()
     self.build_image_embeddings()
     self.build_seq_embeddings()
