@@ -323,7 +323,7 @@ class ShowAndTellModel(object):
       graph_def = tf.GraphDef()
       with open('/hdd/models/im2txt_2016_10_05.1000000/const_model.ckpt-1000000.pb', 'rb') as f:
         graph_def.ParseFromString(f.read())
-      tf.import_graph_def(graph_def=graph_def, input_map={'ExpandDims_1': (self.images + 1.0) * 0.5}, name='orig')
+      tf.import_graph_def(graph_def=graph_def, input_map={'ExpandDims_4': self.images}, name='orig')
 
       total_loss = tf.losses.mean_squared_error(tf.get_default_graph().get_tensor_by_name('image_embedding/image_embedding/MatMul:0') ,self.image_embeddings)
       tf.summary.scalar("losses/copy", total_loss)
