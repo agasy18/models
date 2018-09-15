@@ -320,6 +320,14 @@ class ShowAndTellModel(object):
       for var in tf.trainable_variables():
         tf.summary.histogram("parameters/" + var.op.name, var)
 
+      graph_def = tf.GraphDef()
+      with open('/hdd/models/im2txt_2016_10_05.1000000/const_model.ckpt-1000000.pb', 'rb') as f:
+        graph_def.ParseFromString(f.read())
+      tf.import_graph_def(graph_def=graph_def, input_map={'ExpandDims_1': (self.images + 1.0) * 0.5}, name='orig')
+
+      total_loss = tf.losses.mean_squared_error(tf.get_default_graph().get_tensor_by_name('image_embedding/image_embedding/MatMul:0') ,self.image_embeddings)
+      tf.summary.scalar("losses/copy", total_loss)
+
       self.total_loss = total_loss
       self.target_cross_entropy_losses = losses  # Used in evaluation.
       self.target_cross_entropy_loss_weights = weights  # Used in evaluation.
@@ -331,6 +339,7 @@ class ShowAndTellModel(object):
 
       def restore_fn(sess):
         return
+
       #   tf.logging.info("Restoring {} variables from checkpoint file %s".format(self.st_variables),
       #                   self.config.inception_checkpoint_file)
       #   saver.restore(sess, self.config.inception_checkpoint_file)
