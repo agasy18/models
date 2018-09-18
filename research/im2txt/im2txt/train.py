@@ -107,6 +107,7 @@ def main(unused_argv):
   # Run training.
   session_config = tf.ConfigProto()
   session_config.gpu_options.allow_growth = True
+  session_config.gpu_options.per_process_gpu_memory_fraction = 0.4
 
   tf.contrib.slim.learning.train(
       train_op,
@@ -117,6 +118,7 @@ def main(unused_argv):
       number_of_steps=FLAGS.number_of_steps,
       init_fn=model.init_fn,
       saver=saver,
+      save_summaries_secs=60,
       session_config=session_config)
 
 
