@@ -87,12 +87,12 @@ class TrainingConfig(object):
     self.num_examples_per_epoch = 586363
 
     # Optimizer for training the model.
-    self.optimizer = "SGD"
+    self.optimizer = "Adagrad"
 
     # Learning rate for the initial phase of training.
-    self.initial_learning_rate = 2.0
-    self.learning_rate_decay_factor = 0.5
-    self.num_epochs_per_decay = 8.0
+    self.initial_learning_rate = 0.0005
+    self.learning_rate_decay_factor = 0.9
+    self.num_epochs_per_decay = 1.0
 
     # Learning rate when fine tuning the Inception v3 parameters.
     self.train_inception_learning_rate = 0.0005

@@ -120,6 +120,8 @@ def run_once(model, saver, summary_writer, summary_op):
     return
   session_config = tf.ConfigProto()
   session_config.gpu_options.allow_growth = True
+  session_config.gpu_options.per_process_gpu_memory_fraction = 0.4
+
   with tf.Session(config=session_config) as sess:
     # Load model from checkpoint.
     tf.logging.info("Loading model from checkpoint: %s", model_path)
