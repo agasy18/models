@@ -321,11 +321,25 @@ class ShowAndTellModel(object):
         tf.summary.histogram("parameters/" + var.op.name, var)
 
       graph_def = tf.GraphDef()
+
+      orig_image_embedding_node_name = 'image_embedding/image_embedding/MatMul'
+
       with open('/hdd/models/im2txt_2016_10_05.1000000/const_model.ckpt-1000000.pb', 'rb') as f:
         graph_def.ParseFromString(f.read())
+        graph_def=tf.graph_util.extract_sub_graph(graph_def, [orig_image_embedding_node_name])
       tf.import_graph_def(graph_def=graph_def, input_map={'ExpandDims_4': self.images}, name='orig')
 
-      total_loss = tf.losses.mean_squared_error(tf.get_default_graph().get_tensor_by_name('image_embedding/image_embedding/MatMul:0') ,self.image_embeddings)
+
+      orig_image_embedding = tf.get_default_graph().get_tensor_by_name("orig/" + orig_image_embedding_node_name + ':0')
+
+      tf.summary.histogram('image_embedding/orig', orig_image_embedding)
+      tf.summary.histogram('image_embedding/self', self.image_embeddings)
+      tf.summary.histogram('image_embedding/diff', orig_image_embedding - self.image_embeddings)
+
+
+
+
+      total_loss = tf.losses.mean_squared_error(orig_image_embedding ,self.image_embeddings)
       tf.summary.scalar("losses/copy", total_loss)
 
       self.total_loss = total_loss
