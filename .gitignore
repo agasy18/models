@@ -90,8 +90,5 @@ ENV/
 
 # PyCharm
 .idea/
-
-# For mac
-.DS_Store
-
-samples/outreach/blogs/segmentation_blogpost/carvana-image-masking-challenge/
+research/object_detection/protos/*_pb2.py
+research/im2txt/ssd_inception_v2_coco_2018_01_28*

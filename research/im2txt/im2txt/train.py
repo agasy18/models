@@ -99,6 +99,11 @@ def main(unused_argv):
     saver = tf.train.Saver(max_to_keep=training_config.max_checkpoints_to_keep)
 
   # Run training.
+
+  session_config = tf.ConfigProto()
+  session_config.gpu_options.allow_growth = True
+  session_config.gpu_options.per_process_gpu_memory_fraction = 0.4
+
   tf.contrib.slim.learning.train(
       train_op,
       train_dir,
@@ -107,7 +112,8 @@ def main(unused_argv):
       global_step=model.global_step,
       number_of_steps=FLAGS.number_of_steps,
       init_fn=model.init_fn,
-      saver=saver)
+      saver=saver,
+      session_config=session_config)
 
 
 if __name__ == "__main__":

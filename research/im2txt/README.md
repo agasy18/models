@@ -335,3 +335,8 @@ expected.
 Here is the image:
 
 ![Surfer](g3doc/COCO_val2014_000000224477.jpg)
+
+
+MSCOCO_DIR=/hdd/datasets/mscoco/im2tx_preprocessed
+INCEPTION_CHECKPOINT=/hdd/models/inception_v3_2016_08_28/inception_v3.ckpt 
+MODEL_DIR=/hdd/train/im2txt/orig
