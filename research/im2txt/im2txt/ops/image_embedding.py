@@ -113,81 +113,6 @@ def inception_v3(images,
     return net
 
 
-def ssdin(images,
-        trainable=True,
-        is_training=True,
-        weight_decay=0.00004,
-        stddev=0.1,
-        dropout_keep_prob=0.8,
-        use_batch_norm=True,
-        batch_norm_params=None,
-        add_summaries=True,
-        scope="SSD"):
-
-
-    model_file = 'ssd_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
-    feature_layers = ['FeatureExtractor/InceptionV2/InceptionV2/Mixed_5c/concat:0']
-    if not os.path.isfile(model_file):
-        from subprocess import call
-        url = 'http://download.tensorflow.org/models/object_detection/ssd_inception_v2_coco_2018_01_28.tar.gz'
-        call(['wget', '-nc', url])
-        tar = 'ssd_inception_v2_coco_2018_01_28.tar.gz'
-        call(['tar', '-xf', tar, '-C', './'])
-    images = tf.cast((images + 1.0) * (0.5 * 255), dtype=tf.uint8, name='detector_image')
-
-    with tf.gfile.GFile(model_file, 'rb') as fid:
-        serialized_graph = fid.read()
-        od_graph_def = tf.GraphDef()
-        od_graph_def.ParseFromString(serialized_graph)
-        res = tf.import_graph_def(od_graph_def,
-                                  name='',
-                                  input_map={'image_tensor:0': images},
-                                  return_elements=feature_layers)
-
-    batch_size = 32
-
-    FLAGS = tf.flags.FLAGS
-
-    if hasattr(FLAGS, 'input_files'):
-        batch_size = 1
-
-    net = res[0]
-
-    def _depthwise_separable_conv(inputs,
-                                  num_pwc_filters,
-                                  width_multiplier,
-                                  sc,
-                                  stride=1):
-        """ Helper function to build the depth-wise separable convolution layer.
-      """
-        num_pwc_filters = round(num_pwc_filters * width_multiplier)
-
-        # skip pointwise by setting num_outputs=None
-        depthwise_conv = slim.separable_convolution2d(inputs,
-                                                      num_outputs=None,
-                                                      stride=stride,
-                                                      depth_multiplier=1,
-                                                      kernel_size=[3, 3],
-                                                      scope=sc + '/depthwise_conv')
-
-        bn = slim.batch_norm(depthwise_conv, scope=sc + '/dw_batch_norm')
-        pointwise_conv = slim.convolution2d(bn,
-                                            num_pwc_filters,
-                                            kernel_size=[1, 1],
-                                            scope=sc + '/pointwise_conv')
-        bn = slim.batch_norm(pointwise_conv, scope=sc + '/pw_batch_norm')
-        return bn
-
-    width_multiplier = 1
-    net = _depthwise_separable_conv(net, 1024, width_multiplier, stride=2, sc='x_conv_ds_11')
-    net = _depthwise_separable_conv(net, 1024, width_multiplier, stride=3, sc='x_conv_ds_12')
-    net = _depthwise_separable_conv(net, 1024, width_multiplier, stride=2, sc='x_conv_ds_13')
-
-    return tf.reshape(net, [batch_size, 1024], name='emb_f')
-
-
-
-
 def ssd(images,
         trainable=True,
         is_training=True,
@@ -198,16 +123,20 @@ def ssd(images,
         batch_norm_params=None,
         add_summaries=True,
         scope="SSD"):
+    def flat_tensor(t):
+        return tf.reshape(t, [tf.shape(t)[0], -1])
 
-
+    from os.path import join
     model_file = 'ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
-    feature_layers = ['FeatureExtractor/MobilenetV1/MobilenetV1/Conv2d_10_pointwise/Relu6:0']
     if not os.path.isfile(model_file):
         from subprocess import call
         url = 'http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_coco_2017_11_17.tar.gz'
         call(['wget', '-nc', url])
         tar = 'ssd_mobilenet_v1_coco_2017_11_17.tar.gz'
         call(['tar', '-xf', tar, '-C', './'])
+
+    feature_layers = ['FeatureExtractor/MobilenetV1/MobilenetV1/Conv2d_11_pointwise/Relu6:0']
+    feature_selector = lambda f: tf.concat([flat_tensor(n) for n in f], axis=1, name='selected_features')
     images = tf.cast((images + 1.0) * (0.5 * 255), dtype=tf.uint8, name='detector_image')
 
     with tf.gfile.GFile(model_file, 'rb') as fid:
@@ -221,26 +150,25 @@ def ssd(images,
 
     batch_size = 32
 
-    FLAGS = tf.flags.FLAGS
+    if 'batch_size' in globals():
+        batch_size = globals()['batch_size']
 
-    if hasattr(FLAGS, 'input_files'):
-        batch_size = 1
-
-    net = res[0]
+    selected_features = tf.reshape(res[0], [batch_size, 19, 19, 512])
 
     def _depthwise_separable_conv(inputs,
                                   num_pwc_filters,
                                   width_multiplier,
                                   sc,
-                                  stride=1):
+                                  downsample=False):
         """ Helper function to build the depth-wise separable convolution layer.
       """
         num_pwc_filters = round(num_pwc_filters * width_multiplier)
+        _stride = 2 if downsample else 1
 
         # skip pointwise by setting num_outputs=None
         depthwise_conv = slim.separable_convolution2d(inputs,
                                                       num_outputs=None,
-                                                      stride=stride,
+                                                      stride=_stride,
                                                       depth_multiplier=1,
                                                       kernel_size=[3, 3],
                                                       scope=sc + '/depthwise_conv')
@@ -254,12 +182,10 @@ def ssd(images,
         return bn
 
     width_multiplier = 1
-    net = _depthwise_separable_conv(net, 1024, width_multiplier, stride=2, sc='x_conv_ds_11')
-    net = _depthwise_separable_conv(net, 1024, width_multiplier, stride=3, sc='x_conv_ds_12')
-    net = _depthwise_separable_conv(net, 512, width_multiplier, stride=2, sc='x_conv_ds_13')
+    net = _depthwise_separable_conv(selected_features, 512, width_multiplier, sc='x_conv_ds_12')
 
-    net = tf.layers.flatten(net)
+    net = _depthwise_separable_conv(net, 1024, width_multiplier, downsample=True, sc='x_conv_ds_13')
+    net = _depthwise_separable_conv(net, 1024, width_multiplier, sc='x_conv_ds_14')
+    net = slim.avg_pool2d(net, [7, 7], scope='x_avg_pool_15')
 
-    net = tf.layers.dense(net, 1024, activation=tf.nn.sigmoid)
-
-    return tf.reshape(net, [batch_size, 1024], name='emb_f')
+    return tf.reshape(net, [batch_size, 4096], name='emb_f')

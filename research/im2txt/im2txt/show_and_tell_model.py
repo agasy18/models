@@ -186,7 +186,7 @@ class ShowAndTellModel(object):
     Outputs:
       self.image_embeddings
     """
-    inception_output = image_embedding.ssdin(
+    inception_output = image_embedding.ssd(
       self.images,
       trainable=self.train_inception,
       is_training=self.is_training())
