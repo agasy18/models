@@ -91,3 +91,4 @@ ENV/
 # PyCharm
 .idea/
 research/object_detection/protos/*_pb2.py
+research/im2txt/ssd_inception_v2_coco_2018_01_28*
