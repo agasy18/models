@@ -3,7 +3,8 @@
 # bazel build -c opt //im2txt/...
 # pushd ..; protoc object_detection/protos/*.proto --python_out=.; popd
 # example:
-# bazel-bin/im2txt/camera_demo /Users/aghasy/GoogleDrive/SCI/PHD/demo/im2txt_orig/obj+const_model.ckpt-1000000.pb /Users/aghasy/GoogleDrive/SCI/PHD/demo/im2txt_orig/words.txt
+# bazel-bin/im2txt/camera_demo /Users/aghasy/GoogleDrive/SCI/PHD/demo/im2txt_orig/camera.config.json
+# bazel-bin/im2txt/camera_demo /Users/aghasy/GoogleDrive/SCI/PHD/demo/im2txt+ssd/3/camera.config.json 
 ###
 
 
