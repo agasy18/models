@@ -112,7 +112,6 @@ def inception_v3(images,
 
     return net
 
-
 def ssd(images,
         trainable=True,
         is_training=True,
@@ -152,6 +151,8 @@ def ssd(images,
 
     if 'batch_size' in globals():
         batch_size = globals()['batch_size']
+
+    print('batch_size', batch_size, sep='=')
 
     selected_features = tf.reshape(res[0], [batch_size, 19, 19, 512])
 
