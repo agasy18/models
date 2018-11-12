@@ -57,7 +57,14 @@ class InferenceWrapper:
       graph_def.ParseFromString(f.read())
     self.image_placeholder = tf.placeholder(dtype=tf.float32, shape=(None, None, None, 3))
     self.results = {}
-    tf.import_graph_def(graph_def, name="", input_map={'ExpandDims_1': self.image_placeholder})
+    for name in ['ExpandDims_1', 'ExpandDims_3']:
+      try:
+        tf.import_graph_def(graph_def, name="", input_map={name: self.image_placeholder})
+        break
+      except ValueError as e:
+        if name in str(e):
+              continue
+        raise e
 
   def feed_image(self, sess, encoded_image):
     fetches = [
@@ -99,8 +106,10 @@ with tf.Session() as sess:
     frame_f = (np.expand_dims(frame, 0) / 255.0).astype(np.float32)
 
     captions = generator.beam_search(sess, frame_f)
-
-    last_fps += 1.0 / (time() - t0)
+    fps = 1.0 / (time() - t0)
+    if abs(fps - last_fps)/fps > 0.1: 
+      last_fps = 0
+    last_fps += fps
     last_fps /= 2.0
     spaceing = 15
     text_pos = 0
