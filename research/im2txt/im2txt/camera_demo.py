@@ -4,7 +4,8 @@
 # pushd ..; protoc object_detection/protos/*.proto --python_out=.; popd
 # example:
 # bazel-bin/im2txt/camera_demo /Users/aghasy/GoogleDrive/SCI/PHD/demo/im2txt_orig/camera.config.json
-# bazel-bin/im2txt/camera_demo /Users/aghasy/GoogleDrive/SCI/PHD/demo/im2txt+ssd/3/camera.config.json 
+# bazel-bin/im2txt/camera_demo /Users/aghasy/GoogleDrive/SCI/PHD/demo/im2txt+ssd/3/camera.config.json
+# bazel-bin/im2txt/camera_demo /Users/aghasy/GoogleDrive/SCI/PHD/demo/im2txt+ssd/3/camera.config.json --source ~/tmp/demo.mp4
 ###
 
 
@@ -37,6 +38,8 @@ from sys import exit
 
 parser = argparse.ArgumentParser()
 parser.add_argument('config')
+parser.add_argument('--source', default=0)
+parser.add_argument('--size', default='1280x960')
 
 args = parser.parse_args()
 with open(args.config) as f:
@@ -104,13 +107,17 @@ model = InferenceWrapper(abs_path(config['model']['path']))
 with tf.Session() as sess:
   generator = caption_generator.CaptionGenerator(model, vocab)
 
-  cap = cv2.VideoCapture(0)
+  cap = cv2.VideoCapture(args.source)
 
   last_fps = 0
 
   while True:
     t0 = time()
     ret, frame = cap.read()
+    if not ret:
+        break
+    
+    frame = cv2.resize(frame, tuple(int(x) for x in args.size.split('x')))
     frame_f = (np.expand_dims(frame, 0) / 255.0).astype(np.float32)
 
     captions = generator.beam_search(sess, frame_f)
