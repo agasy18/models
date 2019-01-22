@@ -151,7 +151,9 @@ with tf.Session() as sess:
       category_index,
       instance_masks=None,
       use_normalized_coordinates=True,
-      line_thickness=min(frame.shape[:-1]) // 100)
+      line_thickness=min(frame.shape[:-1]) // 100,
+      fontsize=50,
+      alignment='cc')
 
     sp = max(sp, sum(p for c, p in captions))
     for i, (c, p) in enumerate(captions):

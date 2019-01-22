@@ -101,7 +101,9 @@ def draw_bounding_box_on_image_array(image,
                                      color='red',
                                      thickness=4,
                                      display_str_list=(),
-                                     use_normalized_coordinates=True):
+                                     use_normalized_coordinates=True,
+                                     fontsize=24,
+                                     alignment=None):
   """Adds a bounding box to an image (numpy array).
 
   Bounding box coordinates can be specified in either absolute (pixel) or
@@ -124,7 +126,7 @@ def draw_bounding_box_on_image_array(image,
   image_pil = Image.fromarray(np.uint8(image)).convert('RGB')
   draw_bounding_box_on_image(image_pil, ymin, xmin, ymax, xmax, color,
                              thickness, display_str_list,
-                             use_normalized_coordinates)
+                             use_normalized_coordinates, fontsize, alignment)
   np.copyto(image, np.array(image_pil))
 
 
@@ -136,7 +138,9 @@ def draw_bounding_box_on_image(image,
                                color='red',
                                thickness=4,
                                display_str_list=(),
-                               use_normalized_coordinates=True):
+                               use_normalized_coordinates=True,
+                               fontsize=24,
+                               alignment=None):
   """Adds a bounding box to an image.
 
   Bounding box coordinates can be specified in either absolute (pixel) or
@@ -171,7 +175,7 @@ def draw_bounding_box_on_image(image,
   draw.line([(left, top), (left, bottom), (right, bottom),
              (right, top), (left, top)], width=thickness, fill=color)
   try:
-    font = ImageFont.truetype('arial.ttf', 24)
+    font = ImageFont.truetype('arial.ttf', fontsize)
   except IOError:
     font = ImageFont.load_default()
 
@@ -186,16 +190,26 @@ def draw_bounding_box_on_image(image,
     text_bottom = top
   else:
     text_bottom = bottom + total_display_str_height
+
+  
+
   # Reverse list and print from bottom to top.
   for display_str in display_str_list[::-1]:
     text_width, text_height = font.getsize(display_str)
+    if alignment == 'cc':
+      tleft = (left + right - text_width)/2
+      ttext_bottom = (top + bottom)/2
+    elif not alignment:
+      pass
+    else:
+      assert False
     margin = np.ceil(0.05 * text_height)
     draw.rectangle(
-        [(left, text_bottom - text_height - 2 * margin), (left + text_width,
-                                                          text_bottom)],
+        [(tleft, ttext_bottom - text_height - 2 * margin), (tleft + text_width,
+                                                          ttext_bottom)],
         fill=color)
     draw.text(
-        (left + margin, text_bottom - text_height - margin),
+        (tleft + margin, ttext_bottom - text_height - margin),
         display_str,
         fill='black',
         font=font)
@@ -541,7 +555,9 @@ def visualize_boxes_and_labels_on_image_array(
     line_thickness=4,
     groundtruth_box_visualization_color='black',
     skip_scores=False,
-    skip_labels=False):
+    skip_labels=False,
+    fontsize=24,
+    alignment=None):
   """Overlay labeled boxes on an image with formatted scores and label names.
 
   This function groups boxes that correspond to the same location
@@ -648,7 +664,9 @@ def visualize_boxes_and_labels_on_image_array(
         color=color,
         thickness=line_thickness,
         display_str_list=box_to_display_str_map[box],
-        use_normalized_coordinates=use_normalized_coordinates)
+        use_normalized_coordinates=use_normalized_coordinates,
+        fontsize=fontsize,
+        alignment=alignment)
     if keypoints is not None:
       draw_keypoints_on_image_array(
           image,
